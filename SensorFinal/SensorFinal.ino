@@ -42,16 +42,25 @@ void setup(){
     : "I" (DDB0), "I" (DDB1), "I" (_SFR_IO_ADDR(DDRB))
     : "r16"
   );
+
+  asm (
+    /*TCCR1A = 0*/
+    "ldi r16, 0x00 \n"
+    "sts 0x80, r16 \n"
+
+    /* Prescaler 256 y CTC */
+    "ldi r16, 0x0C \n"
+    "sts 0x81, r16 \n"
+
+    /* TIMSK activa OCIEA para funcionar OCR1A */
+    "ldi r16, 0x02 \n"
+    "sts 0x6F, r16 \n"
+    
+    );
+    
+    TCNT1  = 0; 
+    OCR1A = 62500; 
   
-  /*Configuración para el temporizador 1*/
-  TCCR1A = 0;                /*Limpiamos registros en 0*/
-  TCCR1B = 0;                /*A funciona para overflow y B para CTC*/
-  
-  TCNT1  = 0;                /*Registro para iniciar el temporizador en 0*/
-  OCR1A = 62500;            /* Cargamos valor a comparar (cada segundo según formula)*/
-  
-  TCCR1B |= (1 << WGM12)|(1 << CS12)|(0<<CS10);   /*Configuración modo CTC, prescaler de 256: CS12 = 1 e CS10 = 0 */ 
-  TIMSK1 |= (1 << OCIE1A);  /*Usamos OCIE1A para establecer OCI1A como registro comparador*/
 }
 
 void loop(){
@@ -69,7 +78,7 @@ void loop(){
   asm volatile (
     "LDI R18, 50 \n"       
     "Tiempo_3: \n" 
-      "LDI R17, 100 \n"    
+      "LDI R17, 70 \n"    
     "Tiempo_2: \n"  
       "LDI R16, 50 \n"     
     "Tiempo_1: \n" 
@@ -85,7 +94,7 @@ void loop(){
   asm volatile (
     "LDI R18, 50 \n"       
     "Tiempo_A: \n" 
-      "LDI R17, 100 \n"     
+      "LDI R17, 70 \n"     
     "Tiempo_B: \n"  
       "LDI R16, 50 \n"     
     "Tiempo_C: \n" 
@@ -193,5 +202,4 @@ ISR(TIMER1_COMPA_vect){
   /*Obtenemos el promedio de los dos sensores*/
   promedio = (temperatura1 + temperatura2)/2;
   TCNT1 = 0; /*Reiniciamos el temporizador*/
-  Serial.println(promedio);
 }
